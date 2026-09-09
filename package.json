@@ -13,6 +13,7 @@
     "test": "npm run test:api && npm run test:web",
     "issues:list": "bash scripts/list-issues.sh",
     "issues:add": "bash scripts/add-issue.sh",
+    "issues:update": "bash scripts/update-issue.sh",
     "issues:remove": "bash scripts/remove-issue.sh"
   }
 }

@@ -19,12 +19,12 @@ For running a single test file, see [apps/api/CLAUDE.md](apps/api/CLAUDE.md) / [
 ## Repository boundaries
 
 - `apps/api` and `apps/web` are independent npm workspaces (own `package.json`, `tsconfig.json`); `contracts/openapi.yaml` at the root is shared by both.
-- `apps/api`'s implemented-vs-stubbed operations are documented in the README's stub coverage table — check it before assuming a write endpoint works.
+- `apps/api` implements every operation in `contracts/openapi.yaml`; see the README's stub coverage table for the current status of each. Data is in-memory only and resets on restart.
 - `apps/web/fixtures/repos/**` are static sample repositories bundled into the web app for the code viewer/file tree; they are not real dependencies and are unrelated to `apps/api` or `apps/web`'s own source.
 
 ## Contract requirements
 
-Functional rules from `contracts/openapi.yaml` that any code touching `Issue` data must respect, regardless of what `apps/api` currently enforces (see [apps/api/CLAUDE.md](apps/api/CLAUDE.md) for the implemented subset):
+Functional rules from `contracts/openapi.yaml` that any code touching `Issue` data must respect (see [apps/api/CLAUDE.md](apps/api/CLAUDE.md) for implementation-specific design decisions):
 
 - `severity` and `rule` are non-null iff `type !== 'COMMENT'`; `author` is non-null iff `type === 'COMMENT'`.
 - `filePath` is a repo-relative POSIX path (no leading slash); `line` is 1-indexed.

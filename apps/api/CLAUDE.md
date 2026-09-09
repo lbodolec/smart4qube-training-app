@@ -16,13 +16,14 @@ Run a single test file: `npx vitest run src/app.test.ts` (from this directory).
 
 Full procedure is in [apps/web/CLAUDE.md](../web/CLAUDE.md); this workspace's part is adding the id to `KNOWN_PROJECT_IDS` in `src/seed.ts`.
 
-## Implemented vs. contract-only behavior
+## Implemented behavior
 
-Beyond which operations are implemented (root CLAUDE.md / README), here's how the implemented ones differ in behavior from the full contract.
+All five `/issues` operations in `contracts/openapi.yaml` are implemented in `src/app.ts`: `listIssues`, `getIssue`, `createIssue`, `updateIssue`, `deleteIssue`. Write operations mutate the in-memory `SEED_ISSUES` array directly — there is still no persistence layer, so restarting the API resets all data back to the 19 seed rows.
 
-Implemented (`listIssues`, `getIssue`) matches the contract: query filtering (`file`, repeatable `type`/`severity`/`status`, AND across params / OR within a param), `400 INVALID_QUERY` for bad enum values, `404 PROJECT_NOT_FOUND` / `ISSUE_NOT_FOUND`.
+The validation/mutation logic is generic across all `IssueType` values (`VULNERABILITY`, `QUALITY_GATE_VIOLATION`, `COMMENT`) since they share one endpoint and payload shape per the contract; `checkTypeInvariant` in `app.ts` is the single function (used by both create and update) enforcing "severity/rule non-null iff type≠COMMENT; author non-null iff type===COMMENT".
 
-Contract-only, not implemented by `createIssue`/`updateIssue`/`deleteIssue` (they always return `501 NOT_IMPLEMENTED` regardless of input):
-- Request validation: server-assigned-field rejection on create, immutable-field rejection and empty-body rejection on update, required-field checks — none of this runs; `400 INVALID_BODY` is never actually produced by the stub.
-- Success responses: `201` with `Location` header (create), `200` with refreshed `updatedAt` (update), `204` no-body (delete) — none occur.
-- `501` itself isn't a documented response in `contracts/openapi.yaml` for any operation; it's a stub-only convention layered on top of the contract, not part of it.
+Design decisions made beyond the literal contract text (worth knowing when debugging a validation error):
+- Any request body key not part of the `NewIssue`/`IssueUpdate` schema — including a typo'd field name — is rejected as `"<field>: unknown field"`, not just the explicitly-named server-assigned/immutable fields. This is stricter than the OpenAPI schema itself (which doesn't forbid additional properties) but keeps error messages diagnostic.
+- An explicit `author: null` on a non-COMMENT create/update is treated as equivalent to omitting `author` (accepted); only a non-null `author` on a non-COMMENT issue is rejected. This mirrors how `severity`/`rule` already use explicit `null` to represent the COMMENT state.
+- Because `author` is immutable and can never be supplied on `updateIssue`, an issue's `type` can never be changed to or from `COMMENT` via update — only between `VULNERABILITY` and `QUALITY_GATE_VIOLATION`, since both already satisfy "author is null". This is an emergent consequence of enforcing immutability + the type invariant together, not a special case in the code.
+- Ids are assigned sequentially as `iss-NNN`, continuing from the highest numeric suffix found in `SEED_ISSUES` at startup; ids are never reused, even after a delete.
