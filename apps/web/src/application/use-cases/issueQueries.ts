@@ -3,6 +3,30 @@ import type { Issue, IssueType, IssueSeverity } from '../../domain/entities/Issu
 const ISSUE_TYPES: IssueType[] = ['VULNERABILITY', 'QUALITY_GATE_VIOLATION', 'COMMENT'];
 const ISSUE_SEVERITIES: IssueSeverity[] = ['BLOCKER', 'CRITICAL', 'MAJOR', 'MINOR', 'INFO'];
 
+/**
+ * Computes the severity filter to send to the API's `severity` query param, given
+ * the current UI toggle state.
+ *
+ * The API excludes any issue with `severity: null` whenever `severity` is non-empty
+ * (see apps/api/src/app.ts), and every COMMENT issue has `severity: null`. So the
+ * severity filter can only be sent to the API when COMMENT issues are deselected
+ * (`activeTypes` does not include 'COMMENT') — otherwise COMMENT issues would be
+ * wrongly excluded from the server response. When COMMENT is selected, this returns
+ * `undefined` so the caller fetches unfiltered (or type-filtered only) and relies on
+ * client-side filtering for correctness.
+ *
+ * It also returns `undefined` when `activeSeverities` covers all known severities,
+ * since that carries no actual narrowing and sending it would be a redundant param.
+ */
+export function computeApiSeverityFilter(
+  activeTypes: ReadonlySet<IssueType>,
+  activeSeverities: ReadonlySet<IssueSeverity>,
+): IssueSeverity[] | undefined {
+  if (activeTypes.has('COMMENT')) return undefined;
+  if (activeSeverities.size >= ISSUE_SEVERITIES.length) return undefined;
+  return ISSUE_SEVERITIES.filter((severity) => activeSeverities.has(severity));
+}
+
 export function groupIssuesByLine(issues: Issue[]): Map<number, Issue[]> {
   const byLine = new Map<number, Issue[]>();
   for (const issue of issues) {

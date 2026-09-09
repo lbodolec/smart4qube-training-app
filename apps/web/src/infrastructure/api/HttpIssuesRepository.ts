@@ -1,5 +1,5 @@
 import type { Issue } from '../../domain/entities/Issue';
-import type { IIssuesRepository } from '../../domain/repositories/IIssuesRepository';
+import type { IIssuesFilters, IIssuesRepository } from '../../domain/repositories/IIssuesRepository';
 
 interface ErrorResponseBody {
   code: string;
@@ -10,8 +10,16 @@ interface ErrorResponseBody {
 export class HttpIssuesRepository implements IIssuesRepository {
   constructor(private readonly baseUrl: string = '') {}
 
-  async listByProject(projectId: string): Promise<Issue[]> {
-    const res = await fetch(`${this.baseUrl}/issues/${encodeURIComponent(projectId)}`);
+  async listByProject(projectId: string, filters?: IIssuesFilters): Promise<Issue[]> {
+    const params = new URLSearchParams();
+    if (filters?.severity && filters.severity.length > 0) {
+      for (const severity of filters.severity) {
+        params.append('severity', severity);
+      }
+    }
+    const query = params.toString();
+    const url = `${this.baseUrl}/issues/${encodeURIComponent(projectId)}${query ? `?${query}` : ''}`;
+    const res = await fetch(url);
     if (!res.ok) {
       let message = `Request failed with status ${res.status}`;
       try {

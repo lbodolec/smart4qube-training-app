@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { Issue } from '../../domain/entities/Issue';
-import { groupIssuesByLine, summarize } from './issueQueries';
+import type { Issue, IssueSeverity, IssueType } from '../../domain/entities/Issue';
+import { groupIssuesByLine, summarize, computeApiSeverityFilter } from './issueQueries';
 
 const T = '2026-08-14T09:12:00.000Z';
 
@@ -122,5 +122,34 @@ describe('summarize', () => {
     expect(summary.byType.QUALITY_GATE_VIOLATION).toBe(2);
     expect(summary.bySeverity.BLOCKER).toBe(2);
     expect(summary.bySeverity.INFO).toBe(0);
+  });
+});
+
+const ALL_TYPES: IssueType[] = ['VULNERABILITY', 'QUALITY_GATE_VIOLATION', 'COMMENT'];
+const ALL_SEVERITIES: IssueSeverity[] = ['BLOCKER', 'CRITICAL', 'MAJOR', 'MINOR', 'INFO'];
+
+describe('computeApiSeverityFilter', () => {
+  it('omits the filter when COMMENT is active, even if severities are a strict subset', () => {
+    const activeTypes = new Set<IssueType>(ALL_TYPES);
+    const activeSeverities = new Set<IssueSeverity>(['BLOCKER', 'CRITICAL']);
+    expect(computeApiSeverityFilter(activeTypes, activeSeverities)).toBeUndefined();
+  });
+
+  it('omits the filter when all 5 severities are active, even if COMMENT is deselected', () => {
+    const activeTypes = new Set<IssueType>(['VULNERABILITY', 'QUALITY_GATE_VIOLATION']);
+    const activeSeverities = new Set<IssueSeverity>(ALL_SEVERITIES);
+    expect(computeApiSeverityFilter(activeTypes, activeSeverities)).toBeUndefined();
+  });
+
+  it('returns the narrowed severity list when COMMENT is deselected and severities are a strict subset', () => {
+    const activeTypes = new Set<IssueType>(['VULNERABILITY', 'QUALITY_GATE_VIOLATION']);
+    const activeSeverities = new Set<IssueSeverity>(['BLOCKER', 'MAJOR']);
+    expect(computeApiSeverityFilter(activeTypes, activeSeverities)).toEqual(['BLOCKER', 'MAJOR']);
+  });
+
+  it('returns an empty array (not undefined) when COMMENT is deselected and every severity is toggled off', () => {
+    const activeTypes = new Set<IssueType>(['VULNERABILITY']);
+    const activeSeverities = new Set<IssueSeverity>();
+    expect(computeApiSeverityFilter(activeTypes, activeSeverities)).toEqual([]);
   });
 });

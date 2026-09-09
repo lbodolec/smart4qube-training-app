@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getProject, getProjectFile } from '../../infrastructure/fixtures/projects';
 import { useIssues } from '../hooks/useIssues';
-import { summarize } from '../../application/use-cases/issueQueries';
+import { summarize, computeApiSeverityFilter } from '../../application/use-cases/issueQueries';
 import { FileTree } from '../components/FileTree/FileTree';
 import { CodeViewer } from '../components/CodeViewer/CodeViewer';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
@@ -25,7 +25,8 @@ export function ProjectPage() {
   const [activeSeverities, setActiveSeverities] = useState<Set<IssueSeverity>>(new Set(SEVERITY_TOGGLES));
 
   const project = projectId ? getProject(projectId) : undefined;
-  const { issues, isLoading, error } = useIssues(projectId ?? '');
+  const apiSeverityFilter = computeApiSeverityFilter(activeTypes, activeSeverities);
+  const { issues, isLoading, error } = useIssues(projectId ?? '', apiSeverityFilter);
 
   const filteredIssues = useMemo(
     () =>

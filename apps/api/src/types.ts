@@ -20,3 +20,25 @@ export interface Issue {
   createdAt: string;               // ISO-8601 UTC, e.g. "2026-08-14T09:12:00.000Z"
   updatedAt: string;               // ISO-8601 UTC
 }
+
+export interface NewIssue {
+  filePath: string;
+  line: number;
+  type: IssueType;
+  severity?: IssueSeverity | null; // null/omitted iff type === 'COMMENT'; required otherwise
+  status?: IssueStatus;            // defaults to 'OPEN' when omitted
+  rule?: string | null;            // null/omitted iff type === 'COMMENT'; required otherwise, must match ^S\d+$
+  message: string;
+  author?: string | null;          // required (non-null) iff type === 'COMMENT'; omitted/null otherwise
+}
+
+export interface IssueUpdate {
+  filePath?: string;
+  line?: number;
+  type?: IssueType;
+  severity?: IssueSeverity | null;
+  rule?: string | null;
+  status?: IssueStatus;
+  message?: string;
+  // no `author` — it's immutable on update, not a legal patch field.
+}

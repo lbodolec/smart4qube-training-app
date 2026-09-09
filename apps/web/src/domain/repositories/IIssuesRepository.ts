@@ -1,5 +1,9 @@
-import type { Issue } from '../entities/Issue';
+import type { Issue, IssueSeverity } from '../entities/Issue';
+
+export interface IIssuesFilters {
+  severity?: IssueSeverity[];
+}
 
 export interface IIssuesRepository {
-  listByProject(projectId: string): Promise<Issue[]>;
+  listByProject(projectId: string, filters?: IIssuesFilters): Promise<Issue[]>;
 }

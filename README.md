@@ -17,14 +17,14 @@ Then open http://localhost:5173.
 
 ## Stub coverage
 
-`apps/api` is a stub implementation of `contracts/openapi.yaml`. Only the two
-read operations are implemented; every write operation returns `501` with
-`NOT_IMPLEMENTED`.
+`apps/api` implements all five operations of `contracts/openapi.yaml`. Data
+lives in an in-memory array seeded at startup and reset on restart — there is
+no persistence layer.
 
 | Operation | Path | Stub behavior |
 |---|---|---|
 | `listIssues` | `GET /issues/{projectId}` | Implemented |
 | `getIssue` | `GET /issues/{projectId}/{issueId}` | Implemented |
-| `createIssue` | `POST /issues/{projectId}` | `501 NOT_IMPLEMENTED` |
-| `updateIssue` | `PUT /issues/{projectId}/{issueId}` | `501 NOT_IMPLEMENTED` |
-| `deleteIssue` | `DELETE /issues/{projectId}/{issueId}` | `501 NOT_IMPLEMENTED` |
+| `createIssue` | `POST /issues/{projectId}` | Implemented |
+| `updateIssue` | `PUT /issues/{projectId}/{issueId}` | Implemented |
+| `deleteIssue` | `DELETE /issues/{projectId}/{issueId}` | Implemented |

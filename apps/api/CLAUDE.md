@@ -16,13 +16,14 @@ Run a single test file: `npx vitest run src/app.test.ts` (from this directory).
 
 Full procedure is in [apps/web/CLAUDE.md](../web/CLAUDE.md); this workspace's part is adding the id to `KNOWN_PROJECT_IDS` in `src/seed.ts`.
 
-## Implemented vs. contract-only behavior
+## Implemented behavior
 
-Beyond which operations are implemented (root CLAUDE.md / README), here's how the implemented ones differ in behavior from the full contract.
+All five contract operations are implemented (`listIssues`, `getIssue`, `createIssue`, `updateIssue`, `deleteIssue`). Write operations mutate the exported `SEED_ISSUES` array in place — there is no persistence layer, so state resets on restart.
 
-Implemented (`listIssues`, `getIssue`) matches the contract: query filtering (`file`, repeatable `type`/`severity`/`status`, AND across params / OR within a param), `400 INVALID_QUERY` for bad enum values, `404 PROJECT_NOT_FOUND` / `ISSUE_NOT_FOUND`.
+`checkTypeInvariant(type, severity, rule, author)` is the single function shared by `createIssue` and `updateIssue` that enforces the contract's type invariant (`severity`/`rule` non-null iff `type !== 'COMMENT'`; `author` non-null iff `type === 'COMMENT'`), returning human-readable `details[]` strings used in `400 INVALID_BODY` responses.
 
-Contract-only, not implemented by `createIssue`/`updateIssue`/`deleteIssue` (they always return `501 NOT_IMPLEMENTED` regardless of input):
-- Request validation: server-assigned-field rejection on create, immutable-field rejection and empty-body rejection on update, required-field checks — none of this runs; `400 INVALID_BODY` is never actually produced by the stub.
-- Success responses: `201` with `Location` header (create), `200` with refreshed `updatedAt` (update), `204` no-body (delete) — none occur.
-- `501` itself isn't a documented response in `contracts/openapi.yaml` for any operation; it's a stub-only convention layered on top of the contract, not part of it.
+Emergent design notes worth knowing when debugging:
+- Unknown-key rejection is stricter than `contracts/openapi.yaml`'s own schema, which doesn't forbid additional properties — `createIssue`/`updateIssue` reject any key not in their known field list with a per-field `400 INVALID_BODY` detail.
+- On create, explicitly supplying `author: null` for a non-`COMMENT` issue is accepted (only a *non-null* `author` on a non-`COMMENT` issue is rejected).
+- Because `author` is immutable on update, `type` can never move to/from `COMMENT` via `updateIssue` — doing so always fails `checkTypeInvariant` (the existing `author` won't satisfy the new type's invariant).
+- Ids are sequential and never reused: `iss-NNN`, computed at startup from the max existing id in `SEED_ISSUES` and incremented for each new issue.
