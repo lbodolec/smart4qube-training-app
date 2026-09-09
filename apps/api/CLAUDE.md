@@ -10,15 +10,15 @@ Run a single test file: `npx vitest run src/app.test.ts` (from this directory).
 
 - `src/app.ts` (`createApp()`) holds all route logic; `src/server.ts` just starts it listening.
 - `src/seed.ts` is the in-memory dataset served by the implemented routes, and defines `KNOWN_PROJECT_IDS` — the set of project ids the stub will recognize (unknown ids get `PROJECT_NOT_FOUND`).
-- `src/types.ts` mirrors the `Issue` shape from `../../contracts/openapi.yaml` by hand — update both together when the contract changes.
+- `src/types.ts` is this workspace's hand-mirrored copy of the contract's `Issue` shape (see root CLAUDE.md).
 
 ## Adding a project fixture
 
-If `apps/web/src/infrastructure/fixtures/projects.ts` gets a new project id, add it to `KNOWN_PROJECT_IDS` in `src/seed.ts` too if the API stub needs to serve issues for it.
+Full procedure is in [apps/web/CLAUDE.md](../web/CLAUDE.md); this workspace's part is adding the id to `KNOWN_PROJECT_IDS` in `src/seed.ts`.
 
 ## Implemented vs. contract-only behavior
 
-The README's stub coverage table lists which operations are implemented; this section covers behavior differences within the operations themselves.
+Beyond which operations are implemented (root CLAUDE.md / README), here's how the implemented ones differ in behavior from the full contract.
 
 Implemented (`listIssues`, `getIssue`) matches the contract: query filtering (`file`, repeatable `type`/`severity`/`status`, AND across params / OR within a param), `400 INVALID_QUERY` for bad enum values, `404 PROJECT_NOT_FOUND` / `ISSUE_NOT_FOUND`.
 

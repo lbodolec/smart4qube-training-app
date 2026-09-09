@@ -14,7 +14,7 @@ npm run test:api      # vitest run, apps/api
 npm run test:web      # vitest run, apps/web
 ```
 
-Run a single test file from a workspace dir, e.g. `cd apps/api && npx vitest run src/app.test.ts`.
+For running a single test file, see [apps/api/CLAUDE.md](apps/api/CLAUDE.md) / [apps/web/CLAUDE.md](apps/web/CLAUDE.md).
 
 ## Repository boundaries
 
